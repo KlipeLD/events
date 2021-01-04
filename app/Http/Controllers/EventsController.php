@@ -7,10 +7,16 @@ use App\Http\Controllers\LeadbookController;
 
 class EventsController extends Controller
 {
+    private $event;
+
+    public function __construct(LeadbookController $event)
+    {
+        $this->event = $event;
+    }
+
     public function shows()
     {
-        $TicketProvider = $this->choosingProvider();
-    	$events = $TicketProvider::shows();
+    	$events = $this->event->shows();
     	return view('welcome',[
             'events' =>$events
         ]);
@@ -18,9 +24,8 @@ class EventsController extends Controller
 
     public function show($showId)
     {
-        $TicketProvider = $this->choosingProvider();
-        $partsEvent = $TicketProvider::show($showId);
-        $nameEvent = $TicketProvider::getNameEvent($showId);
+        $partsEvent = $this->event->show($showId);
+        $nameEvent = $this->event->getNameEvent($showId);
         return view('events.partsevent',[
             'partsEvent' =>$partsEvent,
             'nameEvent' => $nameEvent
@@ -29,9 +34,8 @@ class EventsController extends Controller
 
     public function reserve($showId,$partId)
     {
-        $TicketProvider = $this->choosingProvider();
-        $partEvent = $TicketProvider::getPart($showId,$partId);
-        $places = $TicketProvider::getPlaces($partId);
+        $partEvent = $this->event->getPart($showId,$partId);
+        $places = $this->event->getPlaces($partId);
         return view('events.reserve',[
             'partEvent' =>$partEvent,
             'places' =>$places
@@ -41,7 +45,6 @@ class EventsController extends Controller
     {
         $this->validateReserveData();
         $error = 0;
-        $TicketProvider = $this->choosingProvider();
         $data['name'] = request('name');
         $selectedPlaces = explode(",", request('places')[0]);
             
@@ -55,7 +58,7 @@ class EventsController extends Controller
             $reservationData['notFreePlaces'] = $this->getFreePlaces($partId,$selectedPlaces)[0];
         }
         $reservationData['freePlaces'] = $data['places'];
-        $reservationData['id'] = $TicketProvider::reserveAction($partId,$data);
+        $reservationData['id'] = $this->event->reserveAction($partId,$data);
         $reservationData['name'] = $data['name'];
         return view('events.confirmbooking',[
             'reservationData' =>$reservationData,
@@ -65,8 +68,7 @@ class EventsController extends Controller
 
     private function getFreePlaces($partId,$selectedPlaces)
     {
-        $TicketProvider = $this->choosingProvider();
-        $places = $TicketProvider::getPlaces($partId);
+        $places = $this->event->getPlaces($partId);
         if(is_object($places))
         {
             return $places;
@@ -101,9 +103,4 @@ class EventsController extends Controller
         ]);
     }
 
-    private function choosingProvider()
-    {
-        $TicketProvider = new LeadbookController();
-        return $TicketProvider;
-    }
 }
